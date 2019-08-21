@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# import pyproj.proj as proj
 import sys
-import earth as earth
+import os
 
 POS_INDEX = 5
 VEL_INDEX = 8
@@ -15,6 +14,47 @@ def plot_residual(time, pos, vel, att, is_save, save_path):
     plt.subplot(3, 1, 1)
     plt.plot(time, pos[..., 0])
     plt.ylabel("x(m)")
+    plt.subplot(3, 1, 2)
+    plt.plot(time, pos[..., 1])
+    plt.ylabel("y(m)")
+    plt.subplot(3, 1, 3)
+    plt.plot(time, pos[..., 2])
+    plt.ylabel("z(m)")
+    plt.title("pos residual (m)")
+    plt.grid()
+    if (is_save):
+        plt.savefig(os.path.join(save_path, "pos_residual.jpg"))
+
+    plt.figure(2)
+    plt.subplot(3, 1, 1)
+    plt.plot(time, vel[..., 0])
+    plt.ylabel("x(m/s)")
+    plt.subplot(3, 1, 2)
+    plt.plot(time, vel[..., 1])
+    plt.ylabel("y(m/s)")
+    plt.subplot(3, 1, 3)
+    plt.plot(time, vel[..., 2])
+    plt.ylabel("z(m/s)")
+    plt.title("vel residual (m/s)")
+    plt.grid()
+    if (is_save):
+        plt.savefig(os.path.join(save_path, "vel_residual.jpg"))
+
+    plt.figure(2)
+    plt.subplot(3, 1, 1)
+    plt.plot(time, att[..., 0])
+    plt.ylabel("x(m/s)")
+    plt.subplot(3, 1, 2)
+    plt.plot(time, att[..., 1])
+    plt.ylabel("y(m/s)")
+    plt.subplot(3, 1, 3)
+    plt.plot(time, att[..., 2])
+    plt.ylabel("z(m/s)")
+    plt.title("vel residual (deg)")
+    plt.grid()
+    if (is_save):
+        plt.savefig(os.path.join(save_path, "att_residual.jpg"))
+    plt.show()
 
 
 def compare(result_file,
@@ -55,6 +95,11 @@ def compare(result_file,
             residual_att[residual_i, ...] = ref_att_data[
                 ref_i, ...] - att_data[data_i, ...]
             residual_time[residual_i] = ref_time[ref_i]
+            ''' 角度差异值需要特殊处理一下 '''
+            if ((residual_att[residual_i, 2]) > 180):
+                residual_att[residual_i, 2] -= 360
+            if ((residual_att[residual_i, 2]) < -180):
+                residual_att[residual_i, 2] += 360
             ref_i += 1
             data_i += 1
             residual_i += 1
@@ -90,42 +135,16 @@ def compare(result_file,
 
 def main():
     print("length of argv is %d" % len(sys.argv))
-    if (len(sys.argv) < 2):
+    if (len(sys.argv) < 3):
         print("参数不足")
         return
-
-    file_path = sys.argv[1]  # 结果文件
-    pos_data = np.loadtxt(file_path)
-    time = pos_data[..., 1]
-    xyz = pos_data[..., 2:5]
-    vxyz = pos_data[..., 5:8]
-    att = pos_data[..., 8:11]
-    blh = earth.array_xyz2blh(xyz)
-    xyz_mean = np.mean(xyz, axis=0)
-    xyz = xyz - xyz_mean
-    plt.figure(1)
-    plt.title("xyz")
-    plt.plot(time, xyz)
-    plt.ylabel("xyz(m)")
-    plt.xlabel("time(s)")
-    plt.grid()
-    # plt.show()
-
-    plt.figure(2)
-    plt.title("vxyz")
-    plt.plot(time, vxyz)
-    plt.ylabel("vxyz(m)")
-    plt.xlabel("time(s)")
-    plt.grid()
-    # plt.show()
-
-    plt.figure(3)
-    plt.title("att")
-    plt.plot(time, att)
-    plt.ylabel("att(deg)")
-    plt.xlabel("time(s)")
-    plt.grid()
-    plt.show()
+    if (len(sys.argv) == 3):
+        compare(sys.argv[1], sys.argv[2])
+    if (len(sys.argv) == 5):
+        compare(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
+    if (len(sys.argv) == 7):
+        compare(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]),
+                bool(int(sys.argv[5])), sys.argv[6])
 
 
 if __name__ == "__main__":
